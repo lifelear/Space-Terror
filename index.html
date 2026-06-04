@@ -8,17 +8,17 @@
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 
   :root {
-    --red: #ff2222;
-    --orange: #ff6600;
-    --amber: #ffaa00;
+    --red: #ff4444;
+    --orange: #ff8833;
+    --amber: #ffcc00;
     --green: #00ff88;
-    --teal: #00cccc;
+    --teal: #00dddd;
     --dark: #050a0a;
     --panel: #0a1a1a;
     --panel2: #0d2020;
-    --border: #1a4040;
-    --text: #88cccc;
-    --dim: #335555;
+    --border: #2a5555;
+    --text: #c0eaea;
+    --dim: #7aaaaa;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -27,6 +27,7 @@
     background: var(--dark);
     color: var(--text);
     font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
     overflow: hidden;
     height: 100vh;
     width: 100vw;
@@ -135,13 +136,13 @@
     flex-shrink: 0;
   }
   .hud-stat { display:flex; flex-direction:column; gap:2px; min-width: 120px; }
-  .hud-label { font-size:0.55rem; letter-spacing:0.2em; color:var(--dim); text-transform:uppercase; }
-  .hud-value { font-family:'Orbitron',monospace; font-size:0.9rem; color:var(--green); }
+  .hud-label { font-size:0.7rem; letter-spacing:0.2em; color:var(--dim); text-transform:uppercase; }
+  .hud-value { font-family:'Orbitron',monospace; font-size:1.05rem; color:var(--green); }
   .hud-value.danger { color: var(--red); animation: blink 0.5s infinite; }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .hud-center { text-align:center; }
-  .hud-room-name { font-family:'Orbitron',monospace; font-size:0.8rem; color:var(--teal); letter-spacing:0.2em; }
-  .hud-noise { font-size:0.6rem; color:var(--dim); margin-top:2px; }
+  .hud-room-name { font-family:'Orbitron',monospace; font-size:1rem; color:var(--teal); letter-spacing:0.2em; }
+  .hud-noise { font-size:0.75rem; color:var(--dim); margin-top:2px; }
 
   /* Main game area */
   .game-main {
@@ -159,7 +160,7 @@
     overflow-y: auto;
   }
   .panel-title {
-    font-size:0.55rem; letter-spacing:0.3em; color:var(--dim);
+    font-size:0.7rem; letter-spacing:0.3em; color:var(--teal);
     text-transform:uppercase; border-bottom:1px solid var(--border);
     padding-bottom:0.4rem;
   }
@@ -186,7 +187,7 @@
   .map-room.explored { background: rgba(0,204,204,0.05); }
   .map-room.locked { opacity:0.3; cursor:not-allowed; }
   .map-room.empty { background: transparent; border-color:transparent; cursor:default; }
-  .map-icon { font-size:0.6rem; }
+  .map-icon { font-size:0.75rem; }
 
   /* Noise tracker */
   .noise-bar { display:flex; gap:3px; flex-wrap:wrap; }
@@ -276,7 +277,7 @@
   }
   .action-btn {
     font-family:'Share Tech Mono',monospace;
-    font-size:0.75rem; padding:0.5rem 1rem;
+    font-size:0.9rem; padding:0.6rem 1.1rem;
     border:1px solid var(--border);
     background: var(--panel2);
     color: var(--text);
@@ -290,7 +291,7 @@
   .action-btn.weapon:hover:not(:disabled) { border-color:var(--orange); color:var(--orange); }
   .action-btn:disabled { opacity:0.3; cursor:not-allowed; }
   .ap-cost {
-    font-size:0.6rem; color:var(--dim);
+    font-size:0.72rem; color:var(--amber);
     background: rgba(0,0,0,0.5);
     padding:1px 4px; border-radius:2px;
   }
@@ -335,10 +336,10 @@
   /* Inventory */
   .inventory-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:0.5rem; }
   .inv-slot {
-    height:44px; border:1px solid var(--border);
+    height:50px; border:1px solid var(--border);
     background: var(--panel2); border-radius:2px;
     display:flex; align-items:center; justify-content:center;
-    font-size:0.65rem; color:var(--dim);
+    font-size:0.75rem; color:var(--dim);
     position:relative; cursor:pointer;
     transition: border-color 0.2s;
   }
@@ -354,13 +355,13 @@
     display:flex; flex-direction:column; gap:0.3rem;
   }
   .log-entry {
-    font-size:0.65rem; line-height:1.5;
+    font-size:0.8rem; line-height:1.6;
     border-left:2px solid var(--border);
     padding-left:0.5rem;
     color:var(--dim);
   }
   .log-entry.important { color:var(--text); border-color:var(--teal); }
-  .log-entry.danger    { color:var(--red);  border-color:var(--red); }
+  .log-entry.danger    { color:#ff8888;  border-color:var(--red); }
   .log-entry.success   { color:var(--green);border-color:var(--green); }
 
   /* Modal overlay */
@@ -378,16 +379,16 @@
   }
   .modal-title {
     font-family:'Orbitron',monospace;
-    font-size:1.2rem; margin-bottom:1rem;
+    font-size:1.3rem; margin-bottom:1rem;
     letter-spacing:0.2em;
   }
   .modal-title.red { color:var(--red); text-shadow:0 0 20px var(--red); }
   .modal-title.green { color:var(--green); text-shadow:0 0 20px var(--green); }
-  .modal-text { font-size:0.75rem; line-height:1.8; color:var(--dim); margin-bottom:1.5rem; }
+  .modal-text { font-size:0.9rem; line-height:1.8; color:var(--text); margin-bottom:1.5rem; }
   .modal-buttons { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
   .modal-btn {
-    font-family:'Share Tech Mono',monospace; font-size:0.75rem;
-    padding:0.6rem 1.5rem; border:1px solid var(--border);
+    font-family:'Share Tech Mono',monospace; font-size:0.88rem;
+    padding:0.7rem 1.6rem; border:1px solid var(--border);
     background: transparent; color:var(--text); cursor:pointer;
     letter-spacing:0.2em; transition: all 0.2s;
   }
@@ -546,7 +547,7 @@
       <div class="noise-bar" id="noise-bar"></div>
 
       <div class="panel-title">任務目標</div>
-      <div id="objectives" style="font-size:0.65rem; line-height:1.8; color:var(--dim)"></div>
+      <div id="objectives" style="font-size:0.78rem; line-height:2; color:var(--dim)"></div>
     </div>
 
     <!-- CENTER: FP View -->
