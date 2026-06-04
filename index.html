@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEMESIS — 復仇女神號</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --red: #ff2222;
+    --orange: #ff6600;
+    --amber: #ffaa00;
+    --green: #00ff88;
+    --teal: #00cccc;
+    --dark: #050a0a;
+    --panel: #0a1a1a;
+    --panel2: #0d2020;
+    --border: #1a4040;
+    --text: #88cccc;
+    --dim: #335555;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* ═══════════════ SCREENS ═══════════════ */
+  .screen { display:none; width:100%; height:100vh; }
+  .screen.active { display:flex; }
+
+  /* ═══════════════ TITLE SCREEN ═══════════════ */
+  #title-screen {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(255,34,34,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(0,204,204,0.06) 0%, transparent 50%),
+      var(--dark);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stars {
+    position: absolute; inset:0; pointer-events:none;
+  }
+  .star {
+    position:absolute; width:2px; height:2px;
+    background:#fff; border-radius:50%;
+    animation: twinkle var(--dur) infinite var(--delay) ease-in-out;
+  }
+  @keyframes twinkle {
+    0%,100%{opacity:0.2} 50%{opacity:1}
+  }
+
+  .title-logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: clamp(2.5rem, 8vw, 6rem);
+    letter-spacing: 0.15em;
+    color: #fff;
+    text-shadow:
+      0 0 20px var(--red),
+      0 0 60px rgba(255,34,34,0.4),
+      0 0 120px rgba(255,34,34,0.2);
+    animation: pulse-title 3s infinite;
+    text-align: center;
+  }
+  @keyframes pulse-title {
+    0%,100%{ text-shadow: 0 0 20px var(--red), 0 0 60px rgba(255,34,34,0.4); }
+    50%{ text-shadow: 0 0 30px var(--red), 0 0 90px rgba(255,34,34,0.6), 0 0 150px rgba(255,34,34,0.3); }
+  }
+  .title-sub {
+    font-size: clamp(0.7rem, 2vw, 1rem);
+    letter-spacing: 0.4em;
+    color: var(--dim);
+    margin-top: 0.5rem;
+    text-transform: uppercase;
+  }
+  .title-divider {
+    width: 300px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    margin: 2rem auto;
+  }
+  .title-lore {
+    max-width: 500px; text-align:center;
+    font-size: 0.75rem; line-height:1.8;
+    color: var(--dim); margin-bottom: 2.5rem;
+    padding: 0 1rem;
+  }
+  .btn-start {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.9rem; letter-spacing:0.3em;
+    padding: 1rem 3rem;
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    cursor: pointer;
+    text-transform: uppercase;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .btn-start::before {
+    content:''; position:absolute; inset:0;
+    background: var(--red);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s;
+    z-index: -1;
+  }
+  .btn-start:hover { color: #000; }
+  .btn-start:hover::before { transform: scaleX(1); }
+
+  /* ═══════════════ GAME SCREEN ═══════════════ */
+  #game-screen {
+    flex-direction: column;
+    background: var(--dark);
+  }
+
+  /* HUD top bar */
+  .hud-top {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 0.5rem 1rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .hud-stat { display:flex; flex-direction:column; gap:2px; min-width: 120px; }
+  .hud-label { font-size:0.55rem; letter-spacing:0.2em; color:var(--dim); text-transform:uppercase; }
+  .hud-value { font-family:'Orbitron',monospace; font-size:0.9rem; color:var(--green); }
+  .hud-value.danger { color: var(--red); animation: blink 0.5s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .hud-center { text-align:center; }
+  .hud-room-name { font-family:'Orbitron',monospace; font-size:0.8rem; color:var(--teal); letter-spacing:0.2em; }
+  .hud-noise { font-size:0.6rem; color:var(--dim); margin-top:2px; }
+
+  /* Main game area */
+  .game-main {
+    display:flex; flex:1; overflow:hidden;
+  }
+
+  /* ─── LEFT PANEL: Ship map ─── */
+  .panel-map {
+    width: 220px; flex-shrink:0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display:flex; flex-direction:column;
+    padding: 0.75rem;
+    gap: 0.75rem;
+    overflow-y: auto;
+  }
+  .panel-title {
+    font-size:0.55rem; letter-spacing:0.3em; color:var(--dim);
+    text-transform:uppercase; border-bottom:1px solid var(--border);
+    padding-bottom:0.4rem;
+  }
+
+  /* Ship map grid */
+  #ship-map {
+    display:grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+  }
+  .map-room {
+    aspect-ratio:1;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    cursor:pointer;
+    position:relative;
+    transition: all 0.2s;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .map-room:hover { border-color: var(--teal); }
+  .map-room.current { border-color: var(--green); background: rgba(0,255,136,0.1); }
+  .map-room.alien { border-color: var(--red); background: rgba(255,34,34,0.1); }
+  .map-room.explored { background: rgba(0,204,204,0.05); }
+  .map-room.locked { opacity:0.3; cursor:not-allowed; }
+  .map-room.empty { background: transparent; border-color:transparent; cursor:default; }
+  .map-icon { font-size:0.6rem; }
+
+  /* Noise tracker */
+  .noise-bar { display:flex; gap:3px; flex-wrap:wrap; }
+  .noise-pip {
+    width:12px; height:12px;
+    border:1px solid var(--border);
+    border-radius:2px;
+    background: var(--panel2);
+    transition: background 0.3s;
+  }
+  .noise-pip.active { background: var(--orange); border-color:var(--orange); }
+  .noise-pip.danger { background: var(--red); border-color:var(--red); animation: blink 0.5s infinite; }
+
+  /* ─── CENTER: First-person view ─── */
+  .panel-view {
+    flex:1; display:flex; flex-direction:column;
+    position:relative; overflow:hidden;
+  }
+
+  #fp-canvas {
+    flex:1;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Room visual */
+  .room-visual {
+    width:100%; height:100%;
+    position:relative;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+
+  .room-bg {
+    position:absolute; inset:0;
+    background: linear-gradient(180deg, #010808 0%, #020f0f 60%, #051515 100%);
+  }
+
+  /* Perspective corridor lines */
+  .corridor-lines {
+    position:absolute; inset:0;
+    pointer-events:none;
+  }
+  .corridor-lines svg { width:100%; height:100%; }
+
+  /* Alien sprite */
+  .alien-sprite {
+    position:absolute;
+    display:flex; flex-direction:column; align-items:center;
+    transition: all 0.3s;
+    cursor:pointer;
+    z-index:10;
+  }
+  .alien-sprite:hover .alien-body { filter: brightness(1.5); }
+  .alien-body {
+    font-size: var(--size);
+    filter: drop-shadow(0 0 10px var(--red));
+    animation: alien-idle 2s infinite ease-in-out;
+    transition: filter 0.2s;
+  }
+  @keyframes alien-idle {
+    0%,100%{ transform: translateY(0) scale(1); }
+    50%{ transform: translateY(-5px) scale(1.02); }
+  }
+  .alien-hp-bar {
+    width: 60px; height:4px;
+    background: #222; border-radius:2px; margin-top:4px;
+  }
+  .alien-hp-fill { height:100%; border-radius:2px; background:var(--red); transition: width 0.3s; }
+
+  /* Attack flash overlay */
+  .attack-flash {
+    position:absolute; inset:0;
+    pointer-events:none; z-index:50;
+    opacity:0;
+  }
+  .attack-flash.shoot { background: rgba(255,200,0,0.3); animation: flash 0.15s; }
+  .attack-flash.hit   { background: rgba(255,34,34,0.5);  animation: flash 0.3s; }
+  @keyframes flash { 0%{opacity:1} 100%{opacity:0} }
+
+  /* Action bar */
+  .action-bar {
+    display:flex; gap:0.5rem; padding:0.75rem 1rem;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .action-btn {
+    font-family:'Share Tech Mono',monospace;
+    font-size:0.75rem; padding:0.5rem 1rem;
+    border:1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    cursor:pointer; letter-spacing:0.1em;
+    transition: all 0.2s;
+    position:relative;
+    display:flex; align-items:center; gap:0.4rem;
+  }
+  .action-btn:hover:not(:disabled) { border-color:var(--teal); color:var(--teal); }
+  .action-btn.weapon { border-color: rgba(255,102,0,0.4); }
+  .action-btn.weapon:hover:not(:disabled) { border-color:var(--orange); color:var(--orange); }
+  .action-btn:disabled { opacity:0.3; cursor:not-allowed; }
+  .ap-cost {
+    font-size:0.6rem; color:var(--dim);
+    background: rgba(0,0,0,0.5);
+    padding:1px 4px; border-radius:2px;
+  }
+
+  /* Action points pip display */
+  .ap-pips { display:flex; gap:4px; align-items:center; margin-left:auto; }
+  .ap-pip {
+    width:10px; height:10px; border-radius:50%;
+    border:1px solid var(--amber);
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .ap-pip.used { background: var(--amber); }
+
+  /* ─── RIGHT PANEL: Character & Log ─── */
+  .panel-right {
+    width: 240px; flex-shrink:0;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display:flex; flex-direction:column;
+    gap:0;
+  }
+  .panel-section {
+    padding:0.75rem;
+    border-bottom:1px solid var(--border);
+  }
+
+  /* Health segments */
+  .health-segments { display:flex; gap:3px; flex-wrap:wrap; margin-top:0.5rem; }
+  .health-seg {
+    width:20px; height:14px;
+    border:1px solid var(--border);
+    border-radius:2px;
+    background: var(--panel2);
+    transition: all 0.3s;
+    position:relative;
+  }
+  .health-seg.wound { background: var(--red); border-color:var(--red); }
+  .health-seg.serious { background: #880000; border-color:#880000; }
+  .health-seg.dead { background: #222; border-color:#333; opacity:0.5; }
+
+  /* Inventory */
+  .inventory-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:0.5rem; }
+  .inv-slot {
+    height:44px; border:1px solid var(--border);
+    background: var(--panel2); border-radius:2px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.65rem; color:var(--dim);
+    position:relative; cursor:pointer;
+    transition: border-color 0.2s;
+  }
+  .inv-slot:hover { border-color:var(--teal); }
+  .inv-slot.filled { color:var(--text); border-color:var(--dim); }
+  .inv-slot.active-weapon { border-color:var(--orange); color:var(--orange); }
+  .inv-slot-icon { font-size:1.2rem; }
+
+  /* Event log */
+  .event-log {
+    flex:1; overflow-y:auto;
+    padding:0.75rem;
+    display:flex; flex-direction:column; gap:0.3rem;
+  }
+  .log-entry {
+    font-size:0.65rem; line-height:1.5;
+    border-left:2px solid var(--border);
+    padding-left:0.5rem;
+    color:var(--dim);
+  }
+  .log-entry.important { color:var(--text); border-color:var(--teal); }
+  .log-entry.danger    { color:var(--red);  border-color:var(--red); }
+  .log-entry.success   { color:var(--green);border-color:var(--green); }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background: rgba(0,0,0,0.85);
+    z-index:100; align-items:center; justify-content:center;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal-box {
+    background: var(--panel);
+    border:1px solid var(--border);
+    padding:2rem; max-width:420px; width:90%;
+    text-align:center;
+  }
+  .modal-title {
+    font-family:'Orbitron',monospace;
+    font-size:1.2rem; margin-bottom:1rem;
+    letter-spacing:0.2em;
+  }
+  .modal-title.red { color:var(--red); text-shadow:0 0 20px var(--red); }
+  .modal-title.green { color:var(--green); text-shadow:0 0 20px var(--green); }
+  .modal-text { font-size:0.75rem; line-height:1.8; color:var(--dim); margin-bottom:1.5rem; }
+  .modal-buttons { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+  .modal-btn {
+    font-family:'Share Tech Mono',monospace; font-size:0.75rem;
+    padding:0.6rem 1.5rem; border:1px solid var(--border);
+    background: transparent; color:var(--text); cursor:pointer;
+    letter-spacing:0.2em; transition: all 0.2s;
+  }
+  .modal-btn:hover { border-color:var(--teal); color:var(--teal); }
+  .modal-btn.primary { border-color:var(--red); color:var(--red); }
+  .modal-btn.primary:hover { background:var(--red); color:#000; }
+
+  /* Dice roll display */
+  .dice-display {
+    display:flex; gap:0.5rem; justify-content:center;
+    margin:1rem 0; flex-wrap:wrap;
+  }
+  .die {
+    width:40px; height:40px;
+    border:2px solid var(--border);
+    border-radius:4px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Orbitron',monospace; font-size:1.1rem;
+    background: var(--panel2);
+    animation: roll-die 0.4s ease-out;
+  }
+  @keyframes roll-die {
+    0%{ transform:rotate(-30deg) scale(0.5); opacity:0; }
+    100%{ transform:rotate(0deg) scale(1); opacity:1; }
+  }
+  .die.hit   { border-color:var(--green); color:var(--green); }
+  .die.miss  { border-color:var(--dim); color:var(--dim); }
+  .die.jam   { border-color:var(--red); color:var(--red); }
+  .die.wound { border-color:var(--red); color:var(--red); }
+
+  /* Noise draw modal */
+  .noise-card {
+    width:80px; height:120px;
+    border:2px solid var(--orange);
+    border-radius:6px;
+    background: var(--panel2);
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    font-family:'Orbitron',monospace;
+    animation: card-reveal 0.5s ease-out;
+    margin:0.5rem;
+  }
+  @keyframes card-reveal {
+    0%{ transform:rotateY(90deg); opacity:0; }
+    100%{ transform:rotateY(0deg); opacity:1; }
+  }
+  .noise-card-icon { font-size:2.5rem; }
+  .noise-card-text { font-size:0.5rem; letter-spacing:0.1em; color:var(--dim); margin-top:0.3rem; }
+
+  /* Ammo display */
+  .ammo-display { display:flex; gap:2px; align-items:center; }
+  .ammo-pip {
+    width:6px; height:12px;
+    background:var(--amber);
+    border-radius:2px;
+    transition: background 0.2s;
+  }
+  .ammo-pip.empty { background:var(--border); }
+
+  /* Room clear overlay */
+  .room-clear {
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+    z-index:20;
+  }
+  .room-clear-text {
+    font-family:'Orbitron',monospace;
+    font-size:2rem; color:var(--green);
+    text-shadow: 0 0 30px var(--green);
+    opacity:0; animation: clear-anim 2s ease-out forwards;
+    letter-spacing:0.3em;
+  }
+  @keyframes clear-anim {
+    0%{ opacity:0; transform:scale(0.5); }
+    20%{ opacity:1; transform:scale(1.1); }
+    70%{ opacity:1; transform:scale(1); }
+    100%{ opacity:0; transform:scale(1); }
+  }
+
+  /* Contamination tracker */
+  .contam-bar { display:flex; gap:2px; margin-top:0.5rem; }
+  .contam-pip {
+    flex:1; height:6px; border-radius:1px;
+    background:var(--panel2); border:1px solid var(--border);
+    transition: background 0.3s;
+  }
+  .contam-pip.mild { background: rgba(255,170,0,0.6); }
+  .contam-pip.serious { background: rgba(255,102,0,0.8); }
+  .contam-pip.critical { background: var(--red); animation: blink 0.5s infinite; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background:var(--panel); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .panel-map { width:160px; }
+    .panel-right { width:180px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ TITLE ═══════════════ -->
+<div id="title-screen" class="screen active">
+  <div class="stars" id="stars"></div>
+  <div class="title-logo">NEMESIS</div>
+  <div class="title-sub">復仇女神號 — 深空逃生協議</div>
+  <div class="title-divider"></div>
+  <div class="title-lore">
+    你在緊急艙醒來，記憶模糊。<br>
+    飛船「復仇女神號」遭到入侵。<br>
+    它們在黑暗中爬行，追蹤你的每一個聲音。<br><br>
+    目標：啟動推進器，抵達逃生艙，活著離開。
+  </div>
+  <button class="btn-start" onclick="startGame()">▶ 開始任務</button>
+</div>
+
+<!-- ═══════════════ GAME ═══════════════ -->
+<div id="game-screen" class="screen">
+
+  <!-- HUD Top -->
+  <div class="hud-top">
+    <div class="hud-stat">
+      <div class="hud-label">回合</div>
+      <div class="hud-value" id="hud-round">1</div>
+    </div>
+    <div class="hud-stat">
+      <div class="hud-label">行動點</div>
+      <div class="hud-value" id="hud-ap">2</div>
+    </div>
+    <div class="hud-center">
+      <div class="hud-room-name" id="hud-room">電力室</div>
+      <div class="hud-noise">噪音等級 <span id="hud-noise-level">0</span>/10</div>
+    </div>
+    <div class="hud-stat" style="text-align:right">
+      <div class="hud-label">危機狀態</div>
+      <div class="hud-value" id="hud-status">正常</div>
+    </div>
+    <div class="hud-stat" style="text-align:right">
+      <div class="hud-label">污染</div>
+      <div class="hud-value" id="hud-contam">無</div>
+    </div>
+  </div>
+
+  <div class="game-main">
+
+    <!-- LEFT: Map -->
+    <div class="panel-map">
+      <div class="panel-title">船艙地圖</div>
+      <div id="ship-map"></div>
+
+      <div class="panel-title">噪音計</div>
+      <div class="noise-bar" id="noise-bar"></div>
+
+      <div class="panel-title">任務目標</div>
+      <div id="objectives" style="font-size:0.65rem; line-height:1.8; color:var(--dim)"></div>
+    </div>
+
+    <!-- CENTER: FP View -->
+    <div class="panel-view">
+      <div id="fp-canvas">
+        <div class="room-visual" id="room-visual">
+          <div class="room-bg" id="room-bg"></div>
+          <div class="corridor-lines" id="corridor-lines">
+            <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+              <!-- Perspective lines -->
+              <line x1="0" y1="600" x2="400" y2="150" stroke="#1a4040" stroke-width="1" opacity="0.5"/>
+              <line x1="800" y1="600" x2="400" y2="150" stroke="#1a4040" stroke-width="1" opacity="0.5"/>
+              <line x1="0" y1="400" x2="400" y2="150" stroke="#1a4040" stroke-width="0.5" opacity="0.3"/>
+              <line x1="800" y1="400" x2="400" y2="150" stroke="#1a4040" stroke-width="0.5" opacity="0.3"/>
+              <!-- Floor lines -->
+              <line x1="0" y1="600" x2="800" y2="600" stroke="#1a4040" stroke-width="1" opacity="0.8"/>
+              <line x1="100" y1="500" x2="700" y2="500" stroke="#0d2020" stroke-width="1" opacity="0.5"/>
+              <line x1="200" y1="400" x2="600" y2="400" stroke="#0a1a1a" stroke-width="1" opacity="0.4"/>
+              <!-- Wall panels -->
+              <rect x="30" y="150" width="120" height="300" fill="none" stroke="#0d2020" stroke-width="1" opacity="0.6"/>
+              <rect x="650" y="150" width="120" height="300" fill="none" stroke="#0d2020" stroke-width="1" opacity="0.6"/>
+              <!-- Warning stripes -->
+              <rect x="0" y="540" width="800" height="60" fill="url(#stripes)" opacity="0.3"/>
+              <defs>
+                <pattern id="stripes" patternUnits="userSpaceOnUse" width="40" height="60" patternTransform="rotate(45)">
+                  <rect width="20" height="60" fill="#1a1a00"/>
+                </pattern>
+              </defs>
+              <!-- Emergency light -->
+              <ellipse cx="400" cy="0" rx="300" ry="100" fill="rgba(255,34,34,0.03)"/>
+              <!-- Ceiling pipes -->
+              <line x1="200" y1="80" x2="600" y2="80" stroke="#0d2020" stroke-width="3" opacity="0.8"/>
+              <line x1="250" y1="100" x2="550" y2="100" stroke="#0a1515" stroke-width="2" opacity="0.6"/>
+              <!-- Rivets -->
+              <circle cx="32" cy="160" r="3" fill="#0d2020"/>
+              <circle cx="32" cy="300" r="3" fill="#0d2020"/>
+              <circle cx="32" cy="440" r="3" fill="#0d2020"/>
+              <circle cx="768" cy="160" r="3" fill="#0d2020"/>
+              <circle cx="768" cy="300" r="3" fill="#0d2020"/>
+              <circle cx="768" cy="440" r="3" fill="#0d2020"/>
+            </svg>
+          </div>
+          <!-- Aliens rendered here -->
+          <div id="aliens-container" style="position:absolute;inset:0;"></div>
+          <!-- Attack flash -->
+          <div class="attack-flash" id="attack-flash"></div>
+          <!-- Room clear -->
+          <div class="room-clear" id="room-clear" style="display:none">
+            <div class="room-clear-text">房間清除</div>
+          </div>
+          <!-- Room desc overlay -->
+          <div id="room-desc-overlay" style="
+            position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+            background:rgba(0,0,0,0.7); border:1px solid var(--border);
+            padding:0.4rem 1rem; font-size:0.65rem; color:var(--dim);
+            letter-spacing:0.1em; pointer-events:none; white-space:nowrap;
+          "></div>
+        </div>
+      </div>
+
+      <!-- Action bar -->
+      <div class="action-bar" id="action-bar">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- RIGHT: Character + Log -->
+    <div class="panel-right">
+      <div class="panel-section">
+        <div class="panel-title">生命值</div>
+        <div class="health-segments" id="health-segments"></div>
+        <div style="margin-top:0.5rem">
+          <div class="panel-title">污染</div>
+          <div class="contam-bar" id="contam-bar"></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">裝備欄</div>
+        <div class="inventory-grid" id="inventory-grid"></div>
+        <div style="margin-top:0.5rem; font-size:0.6rem; color:var(--dim)">
+          彈藥: <span class="ammo-display" id="ammo-display"></span>
+        </div>
+      </div>
+      <div class="panel-section" style="flex:none">
+        <div class="panel-title">任務紀錄</div>
+      </div>
+      <div class="event-log" id="event-log"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL ═══════════════ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-text" id="modal-text"></div>
+    <div class="dice-display" id="modal-dice"></div>
+    <div class="modal-buttons" id="modal-buttons"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════
+const GS = {
+  round: 1,
+  ap: 2,
+  maxAp: 2,
+  noise: 0,
+  maxNoise: 10,
+  currentRoom: 12, // center
+  health: 10,
+  maxHealth: 10,
+  contamination: 0, // 0-6
+  items: ['手槍', '急救包', null, null],
+  activeWeapon: 0, // item index
+  ammo: { '手槍': 6, '霰彈槍': 3, '火焰噴射器': 2 },
+  objectives: [
+    { text:'啟動推進器 (引擎室)', done:false, room:2 },
+    { text:'取得太空衣 (儲藏室)', done:false, room:14 },
+    { text:'抵達逃生艙', done:false, room:24 },
+  ],
+  rooms: null,
+  aliens: [],
+  gameOver: false,
+  phase: 'player', // player | noise | alien
+};
+
+// ─── ROOM DEFINITIONS (5×5 grid, some empty) ───
+const ROOM_DEFS = [
+  { id:0,  name:'隔離艙A',   icon:'🔒', type:'room' },
+  { id:1,  name:'休眠艙',    icon:'💤', type:'room' },
+  { id:2,  name:'引擎室',    icon:'⚙️', type:'special' },
+  { id:3,  name:'通風道',    icon:'🌫️', type:'room' },
+  { id:4,  name:'隔離艙B',   icon:'🔒', type:'room' },
+
+  { id:5,  name:'走廊A',     icon:'—',  type:'corridor' },
+  { id:6,  name:'醫療室',    icon:'🏥', type:'special' },
+  { id:7,  name:'走廊B',     icon:'—',  type:'corridor' },
+  { id:8,  name:'武器庫',    icon:'🔫', type:'special' },
+  { id:9,  name:'走廊C',     icon:'—',  type:'corridor' },
+
+  { id:10, name:'實驗室',    icon:'🧪', type:'special' },
+  { id:11, name:'走廊D',     icon:'—',  type:'corridor' },
+  { id:12, name:'電力室',    icon:'⚡', type:'room'    },
+  { id:13, name:'走廊E',     icon:'—',  type:'corridor' },
+  { id:14, name:'儲藏室',    icon:'📦', type:'special' },
+
+  { id:15, name:null,        icon:'',   type:'empty' },
+  { id:16, name:'走廊F',     icon:'—',  type:'corridor' },
+  { id:17, name:'駕駛艙',    icon:'🚀', type:'special' },
+  { id:18, name:'走廊G',     icon:'—',  type:'corridor' },
+  { id:19, name:null,        icon:'',   type:'empty' },
+
+  { id:20, name:null,        icon:'',   type:'empty' },
+  { id:21, name:'艙壁A',     icon:'🚪', type:'room' },
+  { id:22, name:'走廊H',     icon:'—',  type:'corridor' },
+  { id:23, name:'艙壁B',     icon:'🚪', type:'room' },
+  { id:24, name:'逃生艙',    icon:'🛸', type:'special' },
+];
+
+// Adjacency map (which rooms connect)
+const ADJACENT = {
+  0:[1,5], 1:[0,2,6], 2:[1,3,7], 3:[2,4,8], 4:[3,9],
+  5:[0,6,10], 6:[1,5,7,11], 7:[2,6,8,12], 8:[3,7,9,13], 9:[4,8,14],
+  10:[5,11,15], 11:[6,10,12,16], 12:[7,11,13,17], 13:[8,12,14,18], 14:[9,13,19],
+  15:[10,16,20], 16:[11,15,17,21], 17:[12,16,18,22], 18:[13,17,19,23], 19:[14,18,24],
+  20:[15,21], 21:[16,20,22], 22:[17,21,23], 23:[18,22,24], 24:[19,23],
+};
+
+// Remove empties from adjacency
+Object.keys(ADJACENT).forEach(k => {
+  ADJACENT[k] = ADJACENT[k].filter(id => ROOM_DEFS[id].type !== 'empty');
+});
+
+// Room events table
+const ROOM_EVENTS = [
+  '靜悄悄的... 但牆上有抓痕。',
+  '空氣管道有奇怪的黏液。',
+  '發現一具焦黑的屍體，手中握著急救包。',
+  '警報閃爍，聽到遠處的金屬撞擊聲。',
+  '這裡的燈已被打碎，黑暗中有什麼在移動。',
+  '一片平靜。你的手沾到了牆上的血跡。',
+  '聽到通風管內有爬行聲。',
+  '這裡有戰鬥過的痕跡，彈殼散落地面。',
+];
+
+// Alien types (inspired by Nemesis: Intruder, Creeper, Breeder, Queen)
+const ALIEN_TYPES = [
+  { name:'爬行者', icon:'🕷️', maxHp:2, attack:1, flee:true,  size:'3rem',  rare:false, desc:'體型小但速度快，會竄入通風管逃跑。' },
+  { name:'掠奪者', icon:'👾', maxHp:4, attack:2, flee:false, size:'4rem',  rare:false, desc:'最常見的入侵者，行動遲緩但攻擊力強。' },
+  { name:'孵化者', icon:'🐛', maxHp:3, attack:1, flee:false, size:'3.5rem',rare:false, desc:'不會主動攻擊，但死亡後會召喚後援。' },
+  { name:'守衛者', icon:'💀', maxHp:6, attack:3, flee:false, size:'5rem',  rare:true,  desc:'精英異形。消滅它是你的首要威脅。' },
+];
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+function startGame() {
+  generateStars(0);
+  buildMap();
+  buildNoiseBar();
+  buildHealthSegments();
+  buildContamBar();
+  buildInventory();
+  buildObjectives();
+  updateHUD();
+  spawnInitialAliens();
+  renderRoom();
+  renderActionBar();
+  addLog('任務開始。你在電力室醒來，手槍在手。', 'important');
+  addLog('需要啟動推進器才能逃離這艘船。', '');
+  document.getElementById('title-screen').classList.remove('active');
+  document.getElementById('game-screen').classList.add('active');
+}
+
+function generateStars(n) {
+  // stars in title
+  const c = document.getElementById('stars');
+  if (!c) return;
+  for (let i=0; i<120; i++) {
+    const s = document.createElement('div');
+    s.className='star';
+    s.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;
+      --dur:${2+Math.random()*4}s;--delay:${Math.random()*4}s;
+      opacity:${0.2+Math.random()*0.8};
+      width:${1+Math.random()*2}px;height:${1+Math.random()*2}px;`;
+    c.appendChild(s);
+  }
+}
+
+function buildMap() {
+  const el = document.getElementById('ship-map');
+  el.innerHTML='';
+  ROOM_DEFS.forEach(r => {
+    const d = document.createElement('div');
+    if (r.type==='empty') { d.className='map-room empty'; el.appendChild(d); return; }
+    d.className='map-room';
+    d.title=r.name||'';
+    d.dataset.id=r.id;
+    d.innerHTML=`<span class="map-icon">${r.icon}</span>`;
+    if (r.id===GS.currentRoom) d.classList.add('current','explored');
+    d.addEventListener('click', ()=>tryMove(r.id));
+    el.appendChild(d);
+  });
+}
+
+function buildNoiseBar() {
+  const el=document.getElementById('noise-bar'); el.innerHTML='';
+  for(let i=0;i<GS.maxNoise;i++){
+    const p=document.createElement('div'); p.className='noise-pip'; p.dataset.i=i;
+    el.appendChild(p);
+  }
+}
+
+function buildHealthSegments() {
+  const el=document.getElementById('health-segments'); el.innerHTML='';
+  for(let i=0;i<GS.maxHealth;i++){
+    const s=document.createElement('div'); s.className='health-seg'; s.dataset.i=i;
+    el.appendChild(s);
+  }
+}
+
+function buildContamBar() {
+  const el=document.getElementById('contam-bar'); el.innerHTML='';
+  for(let i=0;i<6;i++){
+    const p=document.createElement('div'); p.className='contam-pip'; p.dataset.i=i;
+    el.appendChild(p);
+  }
+}
+
+function buildInventory() {
+  const el=document.getElementById('inventory-grid'); el.innerHTML='';
+  const ITEM_ICONS={'手槍':'🔫','急救包':'💊','霰彈槍':'🔧','火焰噴射器':'🔥','太空衣':'🧑‍🚀','扳手':'🔩'};
+  GS.items.forEach((item,i)=>{
+    const d=document.createElement('div');
+    d.className='inv-slot'+(item?' filled':'');
+    if(i===GS.activeWeapon && item) d.classList.add('active-weapon');
+    d.innerHTML=item
+      ?`<div style="text-align:center"><div class="inv-slot-icon">${ITEM_ICONS[item]||'📦'}</div><div style="font-size:0.55rem;margin-top:2px">${item}</div></div>`
+      :`<span style="font-size:0.6rem">空</span>`;
+    d.addEventListener('click',()=>selectItem(i));
+    el.appendChild(d);
+  });
+  // Ammo display
+  const ammoEl=document.getElementById('ammo-display'); ammoEl.innerHTML='';
+  const weapon=GS.items[GS.activeWeapon];
+  const maxAmmo={手槍:6,霰彈槍:3,火焰噴射器:2};
+  const ma=maxAmmo[weapon]||0;
+  const ca=weapon?GS.ammo[weapon]||0:0;
+  for(let i=0;i<ma;i++){
+    const p=document.createElement('div');
+    p.className='ammo-pip'+(i>=ca?' empty':'');
+    ammoEl.appendChild(p);
+  }
+}
+
+function buildObjectives() {
+  const el=document.getElementById('objectives'); el.innerHTML='';
+  GS.objectives.forEach(obj=>{
+    el.innerHTML+=`<div style="margin-bottom:0.3rem;color:${obj.done?'var(--green)':'var(--dim)'}">
+      ${obj.done?'✓':'○'} ${obj.text}</div>`;
+  });
+}
+
+function spawnInitialAliens() {
+  GS.aliens=[];
+  // Spawn 2-3 aliens in random rooms (not player's room)
+  const rooms=[0,3,8,17,21];
+  rooms.forEach(roomId=>{
+    if(Math.random()<0.6){
+      const type=ALIEN_TYPES[Math.floor(Math.random()*(ALIEN_TYPES.length-1))];
+      GS.aliens.push({ id:Date.now()+Math.random(), roomId, type:type.name,
+        hp:type.maxHp, maxHp:type.maxHp, icon:type.icon, attack:type.attack,
+        flee:type.flee, size:type.size, desc:type.desc });
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+function updateHUD() {
+  document.getElementById('hud-round').textContent=GS.round;
+  document.getElementById('hud-ap').textContent=GS.ap;
+  const room=ROOM_DEFS[GS.currentRoom];
+  document.getElementById('hud-room').textContent=room.name||'?';
+  document.getElementById('hud-noise-level').textContent=GS.noise;
+
+  const statEl=document.getElementById('hud-status');
+  if(GS.health<=3){ statEl.textContent='危急'; statEl.className='hud-value danger'; }
+  else if(GS.health<=6){ statEl.textContent='受傷'; statEl.className='hud-value'; statEl.style.color='var(--orange)'; }
+  else { statEl.textContent='正常'; statEl.className='hud-value'; }
+
+  const contamLabels=['無','輕微','中等','嚴重','危險','極危','感染'];
+  document.getElementById('hud-contam').textContent=contamLabels[Math.min(GS.contamination,6)];
+
+  // Health segments
+  document.querySelectorAll('.health-seg').forEach((s,i)=>{
+    s.className='health-seg';
+    if(i>=GS.health) s.classList.add(GS.health<=0?'dead':'wound');
+  });
+
+  // Noise pips
+  document.querySelectorAll('.noise-pip').forEach((p,i)=>{
+    p.className='noise-pip';
+    if(i<GS.noise) p.classList.add(GS.noise>=8?'danger':'active');
+  });
+
+  // Contam bar
+  document.querySelectorAll('.contam-pip').forEach((p,i)=>{
+    p.className='contam-pip';
+    if(i<GS.contamination){
+      if(GS.contamination>=5) p.classList.add('critical');
+      else if(GS.contamination>=3) p.classList.add('serious');
+      else p.classList.add('mild');
+    }
+  });
+
+  // Map
+  document.querySelectorAll('.map-room[data-id]').forEach(d=>{
+    const id=parseInt(d.dataset.id);
+    d.className='map-room';
+    if(id===GS.currentRoom) d.classList.add('current','explored');
+    if(GS.aliens.some(a=>a.roomId===id)) d.classList.add('alien');
+    if(ADJACENT[GS.currentRoom].includes(id)) d.style.opacity='1';
+    else if(id!==GS.currentRoom) d.style.opacity='0.5';
+  });
+}
+
+function renderRoom() {
+  const container=document.getElementById('aliens-container');
+  container.innerHTML='';
+  const roomAliens=GS.aliens.filter(a=>a.roomId===GS.currentRoom);
+
+  if(roomAliens.length===0){
+    document.getElementById('room-desc-overlay').textContent=
+      ROOM_EVENTS[Math.floor(Math.random()*ROOM_EVENTS.length)];
+  } else {
+    document.getElementById('room-desc-overlay').textContent='⚠ 偵測到入侵者';
+  }
+
+  const positions=[[50,55],[30,60],[70,55],[40,65],[60,65]];
+  roomAliens.forEach((alien,i)=>{
+    const [lx,ly]=positions[i]||[50,55];
+    const div=document.createElement('div');
+    div.className='alien-sprite';
+    div.style.cssText=`left:${lx}%;bottom:${100-ly}%;transform:translateX(-50%);--size:${alien.size}`;
+    div.innerHTML=`
+      <div class="alien-body" style="font-size:${alien.size}">${alien.icon}</div>
+      <div style="font-size:0.55rem;color:var(--red);letter-spacing:0.1em;margin-top:3px">${alien.type}</div>
+      <div class="alien-hp-bar"><div class="alien-hp-fill" style="width:${(alien.hp/alien.maxHp)*100}%"></div></div>
+    `;
+    div.title=`${alien.type}: ${alien.desc}`;
+    div.addEventListener('click',()=>attackAlien(alien));
+    container.appendChild(div);
+  });
+
+  // Room-specific color tint
+  const bg=document.getElementById('room-bg');
+  const special=ROOM_DEFS[GS.currentRoom].type==='special';
+  bg.style.background=special
+    ?'linear-gradient(180deg, #010a0a 0%, #030f08 60%, #051510 100%)'
+    :'linear-gradient(180deg, #010808 0%, #020f0f 60%, #051515 100%)';
+}
+
+function renderActionBar() {
+  const bar=document.getElementById('action-bar'); bar.innerHTML='';
+  const weapon=GS.items[GS.activeWeapon];
+  const ammo=weapon?GS.ammo[weapon]||0:0;
+  const roomAliens=GS.aliens.filter(a=>a.roomId===GS.currentRoom);
+
+  const addBtn=(label,cost,fn,cls='',disabled=false,extra='')=>{
+    const b=document.createElement('button');
+    b.className='action-btn '+(cls||'');
+    b.disabled=disabled||GS.ap<cost||GS.gameOver;
+    b.innerHTML=`${label} <span class="ap-cost">${cost}AP</span>${extra}`;
+    b.addEventListener('click',fn);
+    bar.appendChild(b);
+  };
+
+  addBtn('🚶 移動','1',()=>openMoveModal(),'',false);
+  if(weapon && ammo>0){
+    addBtn(`🔫 射擊`,1,()=>{
+      if(roomAliens.length===0){addLog('這裡沒有目標！',''); return; }
+      openShootModal(roomAliens);
+    },'weapon', roomAliens.length===0);
+  }
+  addBtn('🔍 搜索','1',()=>searchRoom(),'',false);
+  if(GS.items.some(i=>i==='急救包')){
+    addBtn('💊 急救','1',()=>useFirstAid(),'');
+  }
+  addBtn('📣 噪音','0',()=>makeNoise(),'');
+  addBtn('⏭ 結束回合','0',()=>endTurn(),'');
+
+  // AP pips
+  const pips=document.createElement('div'); pips.className='ap-pips';
+  for(let i=0;i<GS.maxAp;i++){
+    const p=document.createElement('div');
+    p.className='ap-pip'+(i<GS.ap?'':' used');
+    pips.appendChild(p);
+  }
+  bar.appendChild(pips);
+
+  buildInventory();
+}
+
+// ═══════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════
+function spendAP(n){
+  GS.ap-=n;
+  if(GS.ap<0)GS.ap=0;
+  updateHUD(); renderActionBar();
+}
+
+function tryMove(roomId){
+  if(GS.gameOver) return;
+  if(!ADJACENT[GS.currentRoom].includes(roomId)){
+    addLog('無法直接移動到那裡。',''); return;
+  }
+  if(GS.ap<1){ addLog('行動點不足！',''); return; }
+
+  const fromAliens=GS.aliens.filter(a=>a.roomId===GS.currentRoom);
+  if(fromAliens.length>0){
+    // Nemesis rule: leaving a room with aliens triggers an attack
+    showModal('嘗試撤退',
+      `房間內有 ${fromAliens.length} 隻異形。撤退時，它們將對你發動攻擊！`,
+      [{label:'繼續撤退', fn:()=>{
+        fromAliens.forEach(a=>alienAttackPlayer(a));
+        doMove(roomId);
+        closeModal();
+      }},{label:'取消', fn:closeModal}]
+    );
+  } else {
+    doMove(roomId);
+  }
+}
+
+function doMove(roomId){
+  spendAP(1);
+  addNoise(1);
+  GS.currentRoom=roomId;
+  const room=ROOM_DEFS[roomId];
+  addLog(`移動至 ${room.name}。`,'');
+
+  // Check objectives
+  checkObjectives();
+
+  // Chance aliens notice
+  if(GS.noise>=5 && Math.random()<0.3){
+    const adj=ADJACENT[roomId];
+    adj.forEach(adjId=>{
+      if(GS.aliens.some(a=>a.roomId===adjId) && Math.random()<0.4){
+        addLog('遠處傳來響聲——異形正在靠近！','danger');
+        // Move an alien closer
+        const a=GS.aliens.find(al=>al.roomId===adjId);
+        if(a) a.roomId=roomId;
+      }
+    });
+  }
+
+  updateHUD(); renderRoom(); renderActionBar();
+
+  // Room entry event
+  if(roomId===GS.currentRoom && GS.aliens.filter(a=>a.roomId===roomId).length>0){
+    addLog(`⚠ 警告：偵測到 ${GS.aliens.filter(a=>a.roomId===roomId).length} 隻入侵者！`,'danger');
+  }
+}
+
+function openMoveModal(){
+  if(GS.ap<1){ addLog('行動點不足！',''); return; }
+  const adj=ADJACENT[GS.currentRoom];
+  const buttons=adj.map(id=>({
+    label:`${ROOM_DEFS[id].icon} ${ROOM_DEFS[id].name}${GS.aliens.some(a=>a.roomId===id)?' ⚠':''}`,
+    fn:()=>{ closeModal(); tryMove(id); }
+  }));
+  buttons.push({label:'取消',fn:closeModal});
+  showModal('移動至','選擇目標房間 (消耗1AP)',buttons);
+}
+
+function openShootModal(aliens){
+  const weapon=GS.items[GS.activeWeapon];
+  const btns=aliens.map(a=>({
+    label:`${a.icon} ${a.type} (HP:${a.hp})`,
+    fn:()=>{ closeModal(); doShoot(a); }
+  }));
+  btns.push({label:'取消',fn:closeModal});
+  showModal(`使用 ${weapon} 射擊`,`選擇目標（消耗1AP，1發彈藥）`,btns);
+}
+
+function doShoot(alien){
+  const weapon=GS.items[GS.activeWeapon];
+  if(!weapon||GS.ammo[weapon]<=0){ addLog('彈藥耗盡！','danger'); return; }
+
+  spendAP(1);
+  GS.ammo[weapon]--;
+  addNoise(2); // shooting is loud
+
+  // Roll dice (Nemesis uses custom dice: hit, miss, jam)
+  const roll=Math.random();
+  let dieResult, dieClass;
+  if(roll<0.05){ dieResult='卡彈!'; dieClass='jam'; }
+  else if(roll<0.3){ dieResult='失敗'; dieClass='miss'; }
+  else if(roll<0.6){ dieResult='命中1'; dieClass='hit'; }
+  else if(roll<0.85){ dieResult='命中2'; dieClass='hit'; }
+  else { dieResult='暴擊'; dieClass='hit'; }
+
+  const dmgMap={'卡彈!':0,'失敗':0,'命中1':1,'命中2':2,'暴擊':3};
+  const dmg=dmgMap[dieResult]||0;
+
+  // weapon bonus
+  const bonusDmg=weapon==='霰彈槍'?1:weapon==='火焰噴射器'?2:0;
+  const totalDmg=dmg+(dmg>0?bonusDmg:0);
+
+  // Flash
+  const flash=document.getElementById('attack-flash');
+  flash.className='attack-flash shoot';
+  setTimeout(()=>flash.className='attack-flash',300);
+
+  showModal(`射擊結果`,`目標：${alien.icon} ${alien.type}`,
+    [{label:'繼續',fn:()=>{
+      if(dieResult==='卡彈!'){
+        addLog(`❌ 武器卡彈！需要清膛（下次射擊-1成功）`,'danger');
+      } else if(totalDmg===0){
+        addLog(`射擊失敗——${alien.type} 毫髮無傷。`,'');
+        // alien counter-attacks
+        alienAttackPlayer(alien);
+      } else {
+        alien.hp-=totalDmg;
+        addLog(`射中！${alien.type} 受到 ${totalDmg} 點傷害 (${alien.hp}/${alien.maxHp}HP 剩餘)`,'success');
+        if(alien.hp<=0){
+          handleAlienDeath(alien);
+        } else if(alien.flee && Math.random()<0.5){
+          alien.roomId=getRandomAdjacentRoom();
+          addLog(`${alien.type} 逃入通風管道！`,'');
+        } else {
+          alienAttackPlayer(alien);
+        }
+      }
+      closeModal(); updateHUD(); renderRoom(); renderActionBar();
+    }}],
+    [{value:dieResult, cls:dieClass}]
+  );
+}
+
+function handleAlienDeath(alien){
+  addLog(`✓ ${alien.type} 被消滅！`,'success');
+  const idx=GS.aliens.indexOf(alien);
+  if(idx>-1) GS.aliens.splice(idx,1);
+
+  // Breeder-style: spawns on death
+  if(alien.type==='孵化者'){
+    const newType=ALIEN_TYPES[0]; // spawns Creeper
+    GS.aliens.push({
+      id:Date.now()+Math.random(), roomId:GS.currentRoom,
+      type:newType.name, hp:newType.maxHp, maxHp:newType.maxHp,
+      icon:newType.icon, attack:newType.attack, flee:newType.flee,
+      size:newType.size, desc:newType.desc
+    });
+    addLog('孵化者死亡時釋放出幼蟲！','danger');
+  }
+
+  // Contamination from alien blood
+  if(Math.random()<0.3){
+    GS.contamination=Math.min(6,GS.contamination+1);
+    addLog('⚠ 異形血液噴濺——污染值上升！','danger');
+    checkContamination();
+  }
+
+  // Room clear check
+  if(GS.aliens.filter(a=>a.roomId===GS.currentRoom).length===0){
+    const rc=document.getElementById('room-clear');
+    rc.style.display='flex';
+    setTimeout(()=>{rc.style.display='none';},2200);
+  }
+}
+
+function alienAttackPlayer(alien){
+  // Roll defense die (Nemesis: noise board draws)
+  const roll=Math.random();
+  const evade= roll < 0.35;
+  if(evade){
+    addLog(`${alien.type} 發動攻擊——你設法躲開了！`,'');
+    return;
+  }
+  // Serious vs light wound
+  const serious=Math.random()<0.3;
+  const dmg=serious?2:1;
+  GS.health=Math.max(0,GS.health-dmg);
+  addLog(`${alien.icon} ${alien.type} 攻擊！受到 ${dmg} 點傷害${serious?' (重傷)':''}。`,'danger');
+
+  // Hit flash
+  const flash=document.getElementById('attack-flash');
+  flash.className='attack-flash hit';
+  setTimeout(()=>flash.className='attack-flash',500);
+
+  if(GS.health<=0){ gameOverDead(); }
+  else if(GS.health<=3){ addLog('⚠ 生命危急！必須立即急救。','danger'); }
+  updateHUD();
+}
+
+function searchRoom(){
+  if(GS.ap<1){ addLog('行動點不足！',''); return; }
+  spendAP(1);
+  addNoise(1);
+
+  const roll=Math.random();
+  if(roll<0.15){
+    addLog('搜索結果：什麼也沒有。','');
+  } else if(roll<0.35){
+    addLog('發現：已用完的彈匣，沒有用。','');
+  } else if(roll<0.5){
+    // Find ammo
+    const weapon=GS.items[GS.activeWeapon];
+    if(weapon && GS.ammo[weapon]!==undefined){
+      const found=weapon==='手槍'?3:weapon==='霰彈槍'?1:1;
+      GS.ammo[weapon]+=found;
+      addLog(`發現 ${weapon} 彈藥 ×${found}！`,'success');
+    } else {
+      addLog('發現零散彈藥，但與你的武器不匹配。','');
+    }
+  } else if(roll<0.65){
+    // Medkit
+    const emptySlot=GS.items.indexOf(null);
+    if(emptySlot>-1){
+      GS.items[emptySlot]='急救包';
+      addLog('發現急救包！已加入裝備欄。','success');
+    } else {
+      addLog('發現急救包，但裝備欄已滿。','');
+    }
+  } else if(roll<0.75 && ROOM_DEFS[GS.currentRoom].type==='special'){
+    // Special room item
+    const specials={8:'霰彈槍', 10:'太空衣', 17:'太空衣'};
+    const item=specials[GS.currentRoom];
+    if(item){
+      const slot=GS.items.indexOf(null);
+      if(slot>-1){ GS.items[slot]=item; addLog(`發現 ${item}！`,'success'); }
+    } else {
+      addLog('這個房間有重要設備，但需要專業知識操作。','');
+    }
+  } else {
+    // Noise draw event
+    addLog('搜索中——噪音引來了注意...','danger');
+    noiseEvent();
+  }
+  updateHUD(); renderActionBar(); buildObjectives();
+}
+
+function useFirstAid(){
+  if(GS.ap<1){ addLog('行動點不足！',''); return; }
+  const idx=GS.items.indexOf('急救包');
+  if(idx<0){ addLog('沒有急救包！',''); return; }
+  spendAP(1);
+  GS.items[idx]=null;
+  const heal=3;
+  GS.health=Math.min(GS.maxHealth,GS.health+heal);
+  addLog(`使用急救包，恢復 ${heal} 點生命值。`,'success');
+  updateHUD(); renderActionBar();
+}
+
+function makeNoise(){
+  addNoise(3);
+  addLog('你刻意製造噪音來分散異形注意力...','');
+  noiseEvent();
+  updateHUD(); renderRoom(); renderActionBar();
+}
+
+function addNoise(n){
+  GS.noise=Math.min(GS.maxNoise,GS.noise+n);
+  document.getElementById('hud-noise-level').textContent=GS.noise;
+  if(GS.noise>=GS.maxNoise){ noiseMaxEvent(); }
+}
+
+function noiseEvent(){
+  // Draw "noise card" like Nemesis board game
+  const cards=[
+    { icon:'💨', text:'靜默', effect:()=>{ addLog('噪音消散... 這次安全了。',''); GS.noise=Math.max(0,GS.noise-1); } },
+    { icon:'👣', text:'腳步聲', effect:()=>{ addLog('走廊傳來腳步聲——有東西在巡邏。','danger'); moveAliensCloser(); } },
+    { icon:'👁️', text:'目擊', effect:()=>{ addLog('⚠ 異形鎖定你的位置！','danger'); spawnAlientNearby(); } },
+    { icon:'🩸', text:'血跡', effect:()=>{ addLog('你踩到血跡，留下足跡。噪音+1','danger'); addNoise(1); } },
+    { icon:'📡', text:'掃描', effect:()=>{ addLog('船艦感測器掃描中——異形分散。',''); scatterAliens(); } },
+  ];
+  const card=cards[Math.floor(Math.random()*cards.length)];
+  showModal('噪音事件',``,
+    [{label:'確認',fn:()=>{ card.effect(); closeModal(); updateHUD(); renderRoom(); renderActionBar(); }}],
+    [],
+    card
+  );
+}
+
+function noiseMaxEvent(){
+  addLog('⚠⚠ 噪音值達到極限——全艦異形警戒！','danger');
+  // Move all aliens 1 step towards player
+  moveAliensCloser(); moveAliensCloser();
+  GS.noise=7; // reset partially
+}
+
+function moveAliensCloser(){
+  GS.aliens.forEach(alien=>{
+    if(alien.roomId===GS.currentRoom) return;
+    const path=ADJACENT[alien.roomId];
+    // Move towards player
+    const target=path.find(r=>ADJACENT[r]?.includes(GS.currentRoom));
+    if(target) alien.roomId=target;
+    else if(path.includes(GS.currentRoom)) alien.roomId=GS.currentRoom;
+  });
+}
+
+function spawnAlientNearby(){
+  const adjRooms=ADJACENT[GS.currentRoom].filter(r=>ROOM_DEFS[r].type!=='empty');
+  const spawnRoom=adjRooms[Math.floor(Math.random()*adjRooms.length)];
+  if(spawnRoom===undefined) return;
+  const type=Math.random()<0.7?ALIEN_TYPES[0]:ALIEN_TYPES[1];
+  GS.aliens.push({
+    id:Date.now()+Math.random(), roomId:spawnRoom,
+    type:type.name, hp:type.maxHp, maxHp:type.maxHp,
+    icon:type.icon, attack:type.attack, flee:type.flee,
+    size:type.size, desc:type.desc
+  });
+  addLog(`異形從通風管出現，在附近房間！`,'danger');
+}
+
+function scatterAliens(){
+  GS.aliens.forEach(alien=>{
+    const rooms=Object.keys(ADJACENT).map(Number).filter(r=>ROOM_DEFS[r]?.type!=='empty');
+    alien.roomId=rooms[Math.floor(Math.random()*rooms.length)];
+  });
+}
+
+function selectItem(idx){
+  if(!GS.items[idx]) return;
+  GS.activeWeapon=idx;
+  addLog(`裝備：${GS.items[idx]}`,'');
+  renderActionBar();
+}
+
+function getRandomAdjacentRoom(){
+  const adj=ADJACENT[GS.currentRoom].filter(r=>ROOM_DEFS[r]?.type!=='empty');
+  return adj[Math.floor(Math.random()*adj.length)]||GS.currentRoom;
+}
+
+function checkObjectives(){
+  const room=GS.currentRoom;
+  GS.objectives.forEach(obj=>{
+    if(obj.done) return;
+    if(obj.room===room){
+      if(obj.text.includes('推進器') && room===2){
+        obj.done=true;
+        addLog('✓ 推進器已啟動！逃生艙可以使用了。','success');
+        GS.maxAp=3; GS.ap=Math.min(GS.ap+1,GS.maxAp);
+      } else if(obj.text.includes('太空衣') && GS.items.includes('太空衣')){
+        obj.done=true;
+        addLog('✓ 已取得太空衣！現在可以進入真空艙。','success');
+        GS.contamination=Math.max(0,GS.contamination-1);
+      } else if(obj.text.includes('逃生艙') && room===24){
+        if(!GS.objectives[0].done){
+          addLog('逃生艙：推進器尚未啟動，無法脫離軌道！','danger');
+        } else {
+          obj.done=true;
+          gameWin();
+        }
+      }
+    }
+  });
+  buildObjectives();
+}
+
+function checkContamination(){
+  if(GS.contamination>=6){
+    showModal('感染確認','異形生命體已完全滲透你的細胞。你的任務... 結束了。',
+      [{label:'重新開始',fn:()=>location.reload()}]
+    );
+    document.getElementById('modal-title').className='modal-title red';
+    GS.gameOver=true;
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// TURN SYSTEM
+// ═══════════════════════════════════════════════════
+function endTurn(){
+  if(GS.gameOver) return;
+  GS.phase='noise';
+  addLog(`── 回合 ${GS.round} 結束 ──`,'important');
+
+  // Alien phase: aliens in same room attack
+  const roomAliens=GS.aliens.filter(a=>a.roomId===GS.currentRoom);
+  if(roomAliens.length>0){
+    addLog(`房間內有 ${roomAliens.length} 隻異形發動攻擊！`,'danger');
+    roomAliens.forEach(a=>alienAttackPlayer(a));
+  }
+
+  // Noise decay
+  GS.noise=Math.max(0,GS.noise-1);
+
+  // Chance for random alien movement
+  if(Math.random()<0.5) moveAliensCloser();
+
+  // New round
+  GS.round++;
+  GS.ap=GS.maxAp;
+  GS.phase='player';
+
+  // Contamination check
+  if(GS.contamination>0 && Math.random()<0.15){
+    GS.contamination=Math.min(6,GS.contamination+1);
+    addLog('污染值加深...','danger');
+    checkContamination();
+  }
+
+  updateHUD(); renderRoom(); renderActionBar();
+  addLog(`▶ 回合 ${GS.round} 開始。行動點已回復。`,'important');
+}
+
+// ═══════════════════════════════════════════════════
+// GAME OVER / WIN
+// ═══════════════════════════════════════════════════
+function gameOverDead(){
+  GS.gameOver=true;
+  addLog('你的生命值歸零——任務失敗。','danger');
+  showModal('任務失敗',
+    `你倒在復仇女神號的走廊上。\n黑暗吞噬了一切。`,
+    [{label:'重新開始',fn:()=>location.reload(),cls:'primary'}]
+  );
+  document.getElementById('modal-title').className='modal-title red';
+  document.getElementById('modal-title').textContent='任務失敗';
+}
+
+function gameWin(){
+  GS.gameOver=true;
+  addLog('✓ 成功進入逃生艙！任務完成！','success');
+  showModal('任務完成',
+    `逃生艙脫離復仇女神號。\n你在無盡的星海中漂向安全地帶。\n\n你活下來了。`,
+    [{label:'再來一次',fn:()=>location.reload()},{label:'查看記錄',fn:closeModal}]
+  );
+  document.getElementById('modal-title').className='modal-title green';
+  document.getElementById('modal-title').textContent='逃生成功';
+}
+
+// ═══════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════
+function showModal(title, text, buttons=[], dice=[], noiseCard=null){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-title').className='modal-title';
+  document.getElementById('modal-text').textContent=text;
+
+  const diceEl=document.getElementById('modal-dice'); diceEl.innerHTML='';
+  dice.forEach(d=>{
+    const div=document.createElement('div');
+    div.className=`die ${d.cls||''}`;
+    div.textContent=d.value;
+    diceEl.appendChild(div);
+  });
+  if(noiseCard){
+    diceEl.innerHTML=`<div class="noise-card">
+      <div class="noise-card-icon">${noiseCard.icon}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:0.7rem;color:var(--amber);margin-top:0.3rem">${noiseCard.text}</div>
+    </div>`;
+  }
+
+  const btns=document.getElementById('modal-buttons'); btns.innerHTML='';
+  buttons.forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className=`modal-btn ${b.cls||''}`;
+    btn.textContent=b.label;
+    btn.addEventListener('click',b.fn);
+    btns.appendChild(btn);
+  });
+
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════
+// LOG
+// ═══════════════════════════════════════════════════
+function addLog(msg, type=''){
+  const log=document.getElementById('event-log');
+  const d=document.createElement('div');
+  d.className='log-entry '+(type||'');
+  d.textContent=msg;
+  log.appendChild(d);
+  log.scrollTop=log.scrollHeight;
+  // Keep max 60 entries
+  while(log.children.length>60) log.removeChild(log.firstChild);
+}
+
+// ═══════════════════════════════════════════════════
+// KEYBOARD
+// ═══════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(GS.gameOver) return;
+  if(e.key==='m'||e.key==='M') openMoveModal();
+  if(e.key==='s'||e.key==='S') searchRoom();
+  if(e.key==='Enter') endTurn();
+  if(e.key==='Escape') closeModal();
+});
+
+// Stars in title
+window.addEventListener('load',()=>{
+  if(document.getElementById('stars').children.length===0) generateStars();
+});
+generateStars();
+</script>
+</body>
+</html>
